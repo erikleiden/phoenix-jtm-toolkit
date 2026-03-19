@@ -42,9 +42,19 @@ function PathwayDiagram({ pathway }) {
           </div>
           <ArrowRight size={24} className="text-orange" />
           <div className="bg-orange/5 border border-orange/20 px-4 py-2 rounded-lg">
-            <div className="text-xs text-orange">JTM Target</div>
+            <div className="flex items-center gap-2 mb-0.5">
+              <span className="text-xs text-orange font-medium">JTM Target Role</span>
+              {pathway.target.mobilityIndex && (
+                <span className="text-xs bg-orange/10 text-orange px-1.5 py-0.5 rounded font-semibold">
+                  MI {pathway.target.mobilityIndex}
+                </span>
+              )}
+            </div>
             <div className="font-display font-semibold text-navy">{pathway.target.title}</div>
             <div className="text-sm text-gray-500">${pathway.target.medianWage.toLocaleString()}/yr</div>
+            {pathway.pmmIndustry && (
+              <div className="text-xs text-gray-400 mt-0.5">{pathway.pmmIndustry}</div>
+            )}
           </div>
         </div>
         <div className="text-right">
@@ -123,7 +133,11 @@ function PathwayDiagram({ pathway }) {
             <Clock size={16} className="text-gray-400" />
             <div>
               <div className="text-xs text-gray-500">Training Time</div>
-              <div className="text-sm font-semibold text-navy">{pathway.trainingWeeks} weeks</div>
+              <div className="text-sm font-semibold text-navy">
+                {pathway.trainingWeeks >= 52
+                  ? `~${(pathway.trainingWeeks / 52).toFixed(0)} yr${pathway.trainingWeeks >= 104 ? 's' : ''}`
+                  : `${pathway.trainingWeeks} wks`}
+              </div>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -167,9 +181,15 @@ export default function PathwayPage() {
   return (
     <div className="max-w-5xl mx-auto px-6 py-10">
       <h1 className="text-3xl font-display font-bold text-navy mb-2">Skills Pathway Visualizer</h1>
-      <p className="text-gray-600 mb-8 max-w-2xl">
-        See how workers in feeder roles already have many of the skills needed for higher-paying JTM target roles.
-        The gap is smaller than you think -- and bridgeable with targeted training.
+      <p className="text-gray-600 mb-3 max-w-2xl">
+        See how workers in feeder roles already have many of the skills needed for higher-paying Jobs That Mobilize target roles.
+        The gap is smaller than you think — and bridgeable with targeted training.
+      </p>
+      <p className="text-xs text-gray-400 mb-8 flex items-center gap-1.5">
+        <span>Pathways and wage data sourced from the</span>
+        <a href="https://phoenix.ourtalentmobility.org/" target="_blank" rel="noopener noreferrer"
+          className="text-orange underline hover:text-orange-dark">Phoenix Mobility Monitor</a>
+        <span>(Burning Glass Institute / Lightcast, Phoenix MSA)</span>
       </p>
 
       {/* Pathway selector */}
