@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { FRAMEWORK_STEPS, PILLARS, SAMPLE_OCCUPATIONS } from '../data/jtmFramework'
-import { Building2, Users, Scale, Target, ChevronDown, ChevronRight, ArrowRight } from 'lucide-react'
+import { PMM_INDUSTRIES } from '../data/mobilityMonitor'
+import { Building2, Users, Scale, Target, ChevronDown, ChevronRight, ArrowRight, ExternalLink } from 'lucide-react'
 import { RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Cell, Tooltip } from 'recharts'
 
 const PILLAR_ICONS = { Building2, Users, Scale, Target }
@@ -9,6 +10,144 @@ const PILLAR_ICON_MAP = {
   workers: 'Users',
   equity: 'Scale',
   strategy: 'Target',
+}
+
+const INDUSTRY_SHORT = {
+  'Accommodation and Food Services': 'Hospitality',
+  'Administrative and Support and Waste Management and Remediation Services': 'Admin & Support',
+  'Arts, Entertainment, and Recreation': 'Arts & Rec',
+  'Construction': 'Construction',
+  'Educational Services': 'Education',
+  'Finance and Insurance': 'Finance',
+  'Health Care and Social Assistance': 'Healthcare',
+  'Information': 'Information',
+  'Management of Companies and Enterprises': 'Management',
+  'Manufacturing': 'Manufacturing',
+  'Mining, Quarrying, and Oil and Gas Extraction': 'Mining & Energy',
+  'Other Services (except Public Administration)': 'Other Services',
+  'Professional, Scientific, and Technical Services': 'Prof. Services',
+  'Public Administration': 'Public Admin',
+  'Real Estate and Rental and Leasing': 'Real Estate',
+  'Retail Trade': 'Retail',
+  'Wholesale Trade': 'Wholesale',
+  'Utilities': 'Utilities',
+  'Transportation and Warehousing': 'Transportation',
+}
+
+function PMMLeaderboard() {
+  const [showAll, setShowAll] = useState(false)
+  const [sortBy, setSortBy] = useState('mi') // 'mi' | 'tsi'
+
+  const allRoles = useMemo(() => {
+    return PMM_INDUSTRIES.flatMap(d =>
+      d.roles
+        .filter(r => r.mobilityIndex !== null)
+        .map(r => ({
+          ...r,
+          industry: d.industry,
+          isTargetRole: r.name === d.targetRole,
+          feederCount: r.name === d.targetRole ? d.feederRoles.length : 0,
+        }))
+    ).sort((a, b) =>
+      sortBy === 'mi'
+        ? (b.mobilityIndex - a.mobilityIndex)
+        : (b.talentShortageIndex - a.talentShortageIndex)
+    )
+  }, [sortBy])
+
+  const displayed = showAll ? allRoles : allRoles.slice(0, 12)
+
+  return (
+    <section className="mb-14">
+      <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
+        <h2 className="font-display font-semibold text-navy text-xl">Phoenix's Top JTM Roles</h2>
+        <a
+          href="https://phoenix.ourtalentmobility.org/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-xs text-orange flex items-center gap-1 no-underline hover:text-orange-dark"
+        >
+          Phoenix Mobility Monitor <ExternalLink size={11} />
+        </a>
+      </div>
+      <p className="text-gray-600 text-sm mb-4 max-w-2xl">
+        Every high-mobility occupation identified by BGI in the Phoenix MSA, ranked by Mobility Index.
+        High Talent Shortage Index (TSI) signals roles where skills-first hiring opens the biggest pipeline.
+      </p>
+
+      <div className="flex items-center gap-2 mb-4">
+        <span className="text-xs text-gray-500">Sort by:</span>
+        <button
+          onClick={() => setSortBy('mi')}
+          className={`px-3 py-1 rounded-full text-xs font-medium cursor-pointer transition-colors ${sortBy === 'mi' ? 'bg-navy text-white' : 'bg-white text-gray-600 hover:bg-gray-100'}`}
+        >
+          Mobility Index
+        </button>
+        <button
+          onClick={() => setSortBy('tsi')}
+          className={`px-3 py-1 rounded-full text-xs font-medium cursor-pointer transition-colors ${sortBy === 'tsi' ? 'bg-red-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-100'}`}
+        >
+          Talent Shortage
+        </button>
+      </div>
+
+      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+        <div className="grid grid-cols-12 gap-2 px-4 py-2 bg-gray-50 border-b border-gray-100 text-xs font-semibold text-gray-400 uppercase tracking-wide">
+          <div className="col-span-5">Occupation</div>
+          <div className="col-span-3">Industry</div>
+          <div className="col-span-2 text-center">MI</div>
+          <div className="col-span-2 text-center">TSI</div>
+        </div>
+        {displayed.map((role, i) => {
+          const miColor = role.mobilityIndex >= 90 ? '#2D6A4F' : role.mobilityIndex >= 70 ? '#E0732B' : '#6b7280'
+          const tsiColor = role.talentShortageIndex >= 80 ? '#dc2626' : role.talentShortageIndex >= 60 ? '#d97706' : '#6b7280'
+          return (
+            <div
+              key={`${role.name}-${role.industry}`}
+              className="grid grid-cols-12 gap-2 px-4 py-3 border-b border-gray-50 hover:bg-warm-gray transition-colors items-center"
+            >
+              <div className="col-span-5 flex items-center gap-2">
+                <span className="text-xs text-gray-300 w-5 text-right shrink-0">{i + 1}</span>
+                <div>
+                  <div className="text-sm font-medium text-gray-800 leading-tight">{role.name}</div>
+                  {role.isTargetRole && role.feederCount > 0 && (
+                    <div className="text-xs text-orange mt-0.5">{role.feederCount} feeder pathways</div>
+                  )}
+                </div>
+              </div>
+              <div className="col-span-3 text-xs text-gray-500 leading-tight">
+                {INDUSTRY_SHORT[role.industry] || role.industry}
+              </div>
+              <div className="col-span-2 flex flex-col items-center gap-1">
+                <div className="text-sm font-bold" style={{ color: miColor }}>{role.mobilityIndex}</div>
+                <div className="w-full h-1 bg-gray-100 rounded-full overflow-hidden">
+                  <div className="h-full rounded-full" style={{ width: `${role.mobilityIndex}%`, backgroundColor: miColor }} />
+                </div>
+              </div>
+              <div className="col-span-2 flex flex-col items-center gap-1">
+                <div className="text-sm font-bold" style={{ color: tsiColor }}>{role.talentShortageIndex}</div>
+                <div className="w-full h-1 bg-gray-100 rounded-full overflow-hidden">
+                  <div className="h-full rounded-full" style={{ width: `${role.talentShortageIndex}%`, backgroundColor: tsiColor }} />
+                </div>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      <div className="flex items-center justify-between mt-3">
+        <p className="text-xs text-gray-400 italic">
+          Source: BGI / Lightcast, Phoenix MSA · MI = Mobility Index · TSI = Talent Shortage Index
+        </p>
+        <button
+          onClick={() => setShowAll(v => !v)}
+          className="text-xs text-orange font-medium hover:text-orange-dark cursor-pointer transition-colors"
+        >
+          {showAll ? `Show fewer ↑` : `Show all ${allRoles.length} roles ↓`}
+        </button>
+      </div>
+    </section>
+  )
 }
 
 export default function FrameworkPage() {
@@ -111,6 +250,9 @@ export default function FrameworkPage() {
           })}
         </div>
       </section>
+
+      {/* Phoenix JTM Role Leaderboard */}
+      <PMMLeaderboard />
 
       {/* Scoring Explorer */}
       <section className="mb-10">
